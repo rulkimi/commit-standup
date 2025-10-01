@@ -5,6 +5,8 @@ import { Header } from "@/components/header";
 import StandupDisplay, { StandupData } from "@/components/standup-display";
 import { useEffect, useState } from "react";
 import { validateGithubToken, fetchRepos, generateStandupAction } from "./actions";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 
 export default function StandupGenerator() {
   const [repos, setRepos] = useState<string[]>([]);
@@ -104,7 +106,16 @@ export default function StandupGenerator() {
           <div className="bg-card border border-border p-6 rounded-lg shadow-lg w-full max-w-md mx-4">
             <h2 className="text-2xl font-semibold mb-2">GitHub Authentication</h2>
             <p className="text-sm text-muted-foreground mb-4">
-              Enter your GitHub Personal Access Token to continue.
+              Enter your GitHub Personal Access Token to continue.{" "}
+              <Link
+                href="https://github.com/settings/tokens/new?scopes=repo&description=Standup%20Generator"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary font-medium hover:underline"
+              >
+                Generate a new token here <ExternalLink className="w-4 h-4" />
+              </Link>
+              .
             </p>
             <div className="space-y-4">
               <input
