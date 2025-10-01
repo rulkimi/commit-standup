@@ -55,7 +55,7 @@ export default function StandupDisplay({ standup, loading, onCopy, copied }: Sta
         {!standup && !loading && (
           <div className="text-center py-12 text-muted-foreground">
             <Github className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Configure your settings and click "Generate Standup"</p>
+            <p>Configure your settings and click &quot;Generate Standup&quot;</p>
           </div>
         )}
 

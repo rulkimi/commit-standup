@@ -8,7 +8,7 @@ export async function validateGithubToken(token: string) {
     });
     if (!res.ok) throw new Error('Invalid token');
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
@@ -19,7 +19,7 @@ export async function fetchRepos(token: string) {
     if (!res.ok) throw new Error('Failed to fetch repos');
     const data = await res.json();
     return data.repositories || [];
-  } catch (err) {
+  } catch {
     return [];
   }
 }
@@ -43,7 +43,7 @@ export async function generateStandupAction({
     });
     const data = await res.json();
     return data.data;
-  } catch (err) {
+  } catch {
     return null;
   }
 }

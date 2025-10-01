@@ -10,13 +10,13 @@ interface ConfigurationPanelProps {
   repos: string[];
   selectedRepos: string[];
   username: string;
-  githubToken: string; // ✅ NEW
+  // githubToken: string; // ✅ NEW
   additionalInstructions: string;
   loading: boolean;
   loadingRepos: boolean;
   error: string;
   onUsernameChange: (value: string) => void;
-  onTokenChange: (value: string) => void; // ✅ NEW
+  // onTokenChange: (value: string) => void; // ✅ NEW
   onInstructionsChange: (value: string) => void;
   onRepoToggle: (repo: string) => void;
   onGenerate: () => void;
@@ -26,13 +26,13 @@ export default function ConfigurationPanel({
   repos,
   selectedRepos,
   username,
-  githubToken, // ✅ NEW
+  // githubToken, // ✅ NEW
   additionalInstructions,
   loading,
   loadingRepos,
   error,
   onUsernameChange,
-  onTokenChange, // ✅ NEW
+  // onTokenChange, // ✅ NEW
   onInstructionsChange,
   onRepoToggle,
   onGenerate
