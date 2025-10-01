@@ -56,3 +56,31 @@ export async function generateStandupAction({
     return null;
   }
 }
+
+export async function sendDiscordNotification({
+  message,
+  username,
+  avatar_url
+}: {
+  message: string;
+  username?: string;
+  avatar_url?: string;
+}) {
+  try {
+    const res = await fetch(`${process.env.API_URL}/notify-discord`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, username, avatar_url }),
+    });
+
+    const data = await res.json();
+
+    if (data.status !== "success") {
+      return { error: data.details || "Failed to send Discord message" };
+    }
+
+    return { success: true };
+  } catch {
+    return { error: "Network Error" };
+  }
+}

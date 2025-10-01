@@ -38,6 +38,7 @@ export default function DatePicker({ label, date, onChange }: DatePickerProps) {
               onChange(date);
               setOpen(false);
             }}
+            disabled={{ after: new Date() }}
           />
         </PopoverContent>
       </Popover>

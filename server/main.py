@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware  # ✅ CORS middleware
 from github_client import list_repos  # ✅ new function you'll add
 from standup_generator import generate_standup
 from config import ORG
+from discord_client import send_discord_message
 
 app = FastAPI()
 
@@ -35,6 +36,7 @@ def standup(
     Optional 'since' and 'until' should be ISO 8601 strings, e.g.
     '2025-10-01T00:00:00Z'
     """
+    print(repos, github_username, github_token, additional_instructions, since, until)
     return {"data": generate_standup(
         repos,
         github_username,
@@ -43,3 +45,16 @@ def standup(
         since,
         until
     )}
+
+@app.post("/notify-discord")
+def notify_discord(
+    message: str = Body(..., embed=True),
+    username: str = Body("Standup Bot", embed=True),
+    avatar_url: Optional[str] = Body(None, embed=True),
+):
+    try:
+        send_discord_message(message, username, avatar_url)
+        return {"status": "success", "message": "Posted to Discord!"}
+    except Exception as e:
+        return {"status": "error", "details": str(e)}
+

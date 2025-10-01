@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { validateGithubToken, fetchRepos, generateStandupAction } from "./actions";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
+import { isSameDay } from "@/lib/utils";
 
 export default function StandupGenerator() {
   const [repos, setRepos] = useState<string[]>([]);
@@ -24,8 +25,8 @@ export default function StandupGenerator() {
   const [validatingToken, setValidatingToken] = useState(false);
 
   // New date range state
-  const [since, setSince] = useState<Date | undefined>(undefined);
-  const [until, setUntil] = useState<Date | undefined>(undefined);
+  const [since, setSince] = useState<Date | undefined>(new Date());
+  const [until, setUntil] = useState<Date | undefined>(new Date());
 
 
   useEffect(() => {
@@ -85,13 +86,15 @@ export default function StandupGenerator() {
     setError('');
     setStandup(null);
 
+    const bothToday = isSameDay(since, new Date()) && isSameDay(until, new Date());
+
     const result = await generateStandupAction({
       repos: selectedRepos,
       github_username: username,
       github_token: githubToken,
       additional_instructions: additionalInstructions,
-      since: since?.toISOString(),
-      until: until?.toISOString(),
+      since: !bothToday ? since?.toISOString() : undefined,
+      until: !bothToday ? until?.toISOString() : undefined,
     });
 
     if ("error" in result) {
@@ -189,6 +192,7 @@ export default function StandupGenerator() {
               onCopy={copyToClipboard}
               copied={copied}
               error={analysisError}
+              githubUsername={username}
             />
           </div>
         </div>

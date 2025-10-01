@@ -11,16 +11,20 @@ def generate_standup(
     since: Optional[str] = None,
     until: Optional[str] = None
 ):
-    # If dates not provided, default to today
     now = datetime.now(timezone.utc)
-    start_iso = since or now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-    end_iso = until or now.isoformat()
-    
-    # Friendly date for display
-    date_str = f"{start_iso} to {end_iso}" if since and until else now.strftime("%d %b %Y")
+
+    user_provided_range = since is not None or until is not None
+
+    if not since and not until:
+        start_iso = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        end_iso = now.isoformat()
+        date_str = now.strftime("%d %b %Y")
+    else:
+        start_iso = since or now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        end_iso = until or now.isoformat()
+        date_str = f"{start_iso} to {end_iso}"
 
     grouped_commits = {}
-
     for repo in repos:
         commits = fetch_commits(github_token, repo, start_iso, end_iso, author)
         if commits:
@@ -28,16 +32,21 @@ def generate_standup(
             grouped_commits[friendly_name] = commits
 
     if not grouped_commits:
-        return { "error" : "No commits found. Please report to azrul-qbeep or just write it yourself :P" }
+        if user_provided_range:
+            return { "error": f"No commits found between {date_str}." }
+        else:
+            return { "error": f"No commits found for {date_str}. Maybe you forgot to push? 😛" }
 
     prompt = create_prompt(date_str, grouped_commits, additional_instructions=additional_instructions)
+    print(prompt)
     return get_ai_response(prompt)
 
 
 def create_prompt(date_str: str, grouped_commits: dict, output_format: str = "json", additional_instructions: str = "") -> str:
-    format_instruction = """
-Output Format:
-Return the summary as pure structured JSON with this schema:
+    if output_format == "json":
+        format_instruction = """
+Output Format (STRICT):
+Return ONLY valid JSON matching this schema, with no markdown or code fences:
 
 {
   "projects": [
@@ -47,10 +56,10 @@ Return the summary as pure structured JSON with this schema:
     }
   ]
 }
-
-Ensure valid JSON. Do not wrap it in markdown or code blocks.
-""" if output_format == "json" else f"""
-Format EXACTLY like this:
+"""
+    else:
+        format_instruction = f"""
+Output Format (STRICT — NO EXTRA TEXT OUTSIDE THIS STRUCTURE):
 
 {date_str}:
 
@@ -63,23 +72,21 @@ Format EXACTLY like this:
 - Task line 2
 """
 
-    # Append user-provided instructions only if not empty
-    extra = f"\nAdditional Instructions:\n{additional_instructions}\n" if additional_instructions else ""
+    extra = f"\nAdditional Instructions:\n{additional_instructions.strip()}\n" if additional_instructions else ""
 
-    prompt = f"""
-You are an engineer writing a daily standup summary based on Git commits.
+    prompt = f"""You are an engineer writing a daily standup summary based on Git commits.
 
 Rewrite the raw commit logs below into **concise, descriptive tasks** that:
 - **Keep the original project names EXACTLY as they appear.**
-- Are phrased as completed work, **without using "I", "me", or "my"**.
-- Each task should be **one full sentence**, roughly **8–15 words**.
-- Clearly mention **what was done, where, and for what purpose if implied**.
-  - Example: "Added input validation to registration endpoint to prevent empty fields"
-  - Example: "Refactored checkout service to reduce duplicate network calls"
-- Avoid overly short phrases like "Fixed bug" or overly long explanations.
+- Use **past-tense, objective statements**, without "I", "me", or "my".
+- Each task must be **a single sentence (8–15 words)**.
+- Clearly describe **what was done, where, and why if implied**.
 - Remove prefixes like "feat:", "chore:", "fix:", or leading dashes.
-- No opinions, no filler — only **factual work done**.
-- Do not mention the repo/project name already inside the task
+- Do **not** include the project name inside each task (it's already grouped).
+- **ABSOLUTELY NO extra commentary or explanations outside the required format.**
+- **Discord has a hard limit of 2000 characters per message. If the total output would exceed this limit, AUTOMATICALLY SUMMARIZE OR GROUP TASKS instead of listing all of them individually.**
+- **The response must ALWAYS fit within Discord’s 2000-character limit.**
+- **ALWAYS respond in the exact format requested — no variations.**
 
 {extra}
 
@@ -89,9 +96,6 @@ RAW COMMITS:
 """
 
     for project, commits in grouped_commits.items():
-        prompt += f"\n[{project}]\n" + "\n".join(commits)
+        prompt += f"\n[{project}]\n" + "\n".join(commit.strip() for commit in commits)
 
     return prompt
-
-
-
