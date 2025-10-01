@@ -145,13 +145,11 @@ export default function StandupGenerator() {
               repos={repos}
               selectedRepos={selectedRepos}
               username={username}
-              githubToken={githubToken}
               additionalInstructions={additionalInstructions}
               loading={loading}
               loadingRepos={loadingRepos}
               error={error}
               onUsernameChange={setUsername}
-              onTokenChange={setGithubToken}
               onInstructionsChange={setAdditionalInstructions}
               onRepoToggle={toggleRepo}
               onGenerate={generateStandup}
