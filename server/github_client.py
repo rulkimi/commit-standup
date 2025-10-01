@@ -26,14 +26,14 @@ def list_branches(repo_name: str):
         return []
     return [b["name"] for b in response]
 
-def fetch_commits(repo_name: str, start_iso: str, end_iso: str):
+def fetch_commits(repo_name: str, start_iso: str, end_iso: str, author: str):
     commits = []
     for branch in list_branches(repo_name):
         response = requests.get(
             f"https://api.github.com/repos/{ORG}/{repo_name}/commits",
             headers=headers,
             params={
-                "author": USERNAME,
+                "author": author,
                 "since": start_iso,
                 "until": end_iso,
                 "sha": branch

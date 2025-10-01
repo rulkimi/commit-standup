@@ -1,5 +1,15 @@
 from google import genai
 from config import GEMINI_API_KEY
+from pydantic import BaseModel
+from typing import List
+import json
+
+class ProjectTasks(BaseModel):
+    name: str
+    tasks: List[str]
+
+class StandupSummary(BaseModel):
+    projects: List[ProjectTasks]
 
 client = None
 
@@ -14,6 +24,9 @@ def get_ai_response(prompt: str):
         init_gemini()
     response = client.models.generate_content(
         model="gemini-2.5-flash",
-        contents=prompt
+        contents=prompt,
+        config={
+            "response_schema": StandupSummary
+        }
     )
-    return response.text
+    return json.loads(response.text)
