@@ -1,0 +1,63 @@
+# ---------------------------
+# Python Cache / Compiled Files
+# ---------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# ---------------------------
+# Virtual Environment
+# ---------------------------
+venv/
+env/
+.venv/
+ENV/
+
+# ---------------------------
+# Environment Variables / Secrets
+# ---------------------------
+.env
+*.env
+
+# ---------------------------
+# Build / Packaging
+# ---------------------------
+build/
+dist/
+*.egg-info/
+*.egg
+
+# ---------------------------
+# Jupyter / Notebook
+# ---------------------------
+.ipynb_checkpoints/
+
+# ---------------------------
+# Test / Coverage
+# ---------------------------
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.xml
+.pytest_cache/
+
+# ---------------------------
+# IDE / Editor Settings
+# ---------------------------
+.vscode/
+.idea/
+*.swp
+
+# ---------------------------
+# Logs / Debug
+# ---------------------------
+*.log
+
+# ---------------------------
+# macOS / Linux junk
+# ---------------------------
+.DS_Store
+Thumbs.db
