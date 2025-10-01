@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from gemini_client import get_ai_response
 from github_client import fetch_commits
 
-def generate_standup(repos: list, author: str, additional_instructions: str = ""):
+def generate_standup(repos: list, author: str, github_token, additional_instructions: str = ""):
     today = datetime.now(timezone.utc)
     date_str = today.strftime("%d %b %Y")
     start_iso = today.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
@@ -11,7 +11,7 @@ def generate_standup(repos: list, author: str, additional_instructions: str = ""
     grouped_commits = {}
 
     for repo in repos:
-        commits = fetch_commits(repo, start_iso, end_iso, author)
+        commits = fetch_commits(github_token, repo, start_iso, end_iso, author)
         if commits:
             grouped_commits[repo.upper()] = commits
 
@@ -67,6 +67,7 @@ Rewrite the raw commit logs below into **concise, descriptive tasks** that:
 - Avoid overly short phrases like "Fixed bug" or overly long explanations.
 - Remove prefixes like "feat:", "chore:", "fix:", or leading dashes.
 - No opinions, no filler — only **factual work done**.
+- Do not mention the repo/project name already inside the task
 
 {extra}
 

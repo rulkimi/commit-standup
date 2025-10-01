@@ -2,13 +2,15 @@ import requests
 from datetime import datetime, timezone
 from config import GITHUB_TOKEN, USERNAME, ORG
 
-headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+# headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+def get_headers(token: str):
+    return {"Authorization": f"token {token}"}
 
-def list_repos():
+def list_repos(github_token: str):
     print(f"https://api.github.com/orgs/{ORG}/repos")
     response = requests.get(
         f"https://api.github.com/orgs/{ORG}/repos",
-        headers=headers
+        headers=get_headers(github_token)
     ).json()
 
     if isinstance(response, dict) and response.get("message"):
@@ -17,21 +19,21 @@ def list_repos():
     return [r["name"] for r in response]
 
 
-def list_branches(repo_name: str):
+def list_branches(github_token: str, repo_name: str):
     response = requests.get(
         f"https://api.github.com/repos/{ORG}/{repo_name}/branches",
-        headers=headers
+        headers=get_headers(github_token)
     ).json()
     if isinstance(response, dict) and response.get("message"):
         return []
     return [b["name"] for b in response]
 
-def fetch_commits(repo_name: str, start_iso: str, end_iso: str, author: str):
+def fetch_commits(github_token, repo_name: str, start_iso: str, end_iso: str, author: str):
     commits = []
-    for branch in list_branches(repo_name):
+    for branch in list_branches(github_token, repo_name):
         response = requests.get(
             f"https://api.github.com/repos/{ORG}/{repo_name}/commits",
-            headers=headers,
+            headers=get_headers(github_token),
             params={
                 "author": author,
                 "since": start_iso,
