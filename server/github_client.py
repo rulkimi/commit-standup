@@ -1,6 +1,6 @@
 import requests
 from datetime import datetime, timezone
-from config import GITHUB_TOKEN, USERNAME, ORG
+from config import ORG
 
 # Mapping from raw repo names to friendly project names
 REPO_NAME_MAPPING = {
@@ -33,7 +33,6 @@ REPO_NAME_MAPPING = {
     "QBot": "QBot"
 }
 
-# headers = {"Authorization": f"token {GITHUB_TOKEN}"}
 def get_headers(token: str):
     return {"Authorization": f"token {token}"}
 

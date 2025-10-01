@@ -3,7 +3,7 @@ from typing import List
 from fastapi.middleware.cors import CORSMiddleware  # ✅ CORS middleware
 from github_client import list_repos  # ✅ new function you'll add
 from standup_generator import generate_standup
-from config import ORG, USERNAME
+from config import ORG
 
 app = FastAPI()
 
@@ -25,7 +25,7 @@ def get_repos(github_token: str):
 @app.post("/generate-standup")
 def standup(
     repos: List[str] = Body(DEFAULT_REPOS),
-    github_username: str = Body(USERNAME),
+    github_username: str = Body(""),
     github_token: str = Body(""),
     additional_instructions: str = Body("")
 ):
