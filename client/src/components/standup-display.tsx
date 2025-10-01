@@ -5,6 +5,16 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { useState } from "react";
 import { sendDiscordNotification } from "@/app/actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import Image from "next/image";
 
 export interface Project {
@@ -46,15 +56,31 @@ function formatStandupAsText(standup: StandupData | null) {
 export default function StandupDisplay({ standup, loading, onCopy, copied, error, githubUsername }: StandupDisplayProps) {
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
+  const [showTimeWarning, setShowTimeWarning] = useState(false);
 
   async function handlePostToDiscord() {
     if (!standup) return;
 
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+
+    const isBefore530 = hours < 17 || (hours === 17 && minutes < 30);
+
+    if (isBefore530) {
+      setShowTimeWarning(true);
+      return;
+    }
+
+    await actuallyPost();
+  }
+
+  async function actuallyPost() {
     setPosting(true);
     setPostError(null);
 
     const res = await sendDiscordNotification({
-      message: formatStandupAsText(standup),
+      message: formatStandupAsText(standup!),
       username: githubUsername || "Standup Bot",
     });
 
@@ -166,7 +192,7 @@ export default function StandupDisplay({ standup, loading, onCopy, copied, error
               disabled={posting}
             >
               {posting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
               ) : (
                 <Image
                   src="https://img.icons8.com/?size=100&id=2mIgusGquJFz&format=png&color=000000"
@@ -181,6 +207,34 @@ export default function StandupDisplay({ standup, loading, onCopy, copied, error
           </div>
         </div>
       )}
+
+      <AlertDialog open={showTimeWarning} onOpenChange={setShowTimeWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Post before 5:30 PM?</AlertDialogTitle>
+            <AlertDialogDescription>
+              It’s currently{" "}
+              {new Date().toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              . Are you sure you want to post to Discord now?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowTimeWarning(false);
+                actuallyPost();
+              }}
+            >
+              Post Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </Card>
   );
 }
