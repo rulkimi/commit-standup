@@ -5,22 +5,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Alert, AlertDescription } from "./ui/alert";
+import DatePicker from "./date-picker";
 
 interface ConfigurationPanelProps {
   repos: string[];
   selectedRepos: string[];
   username: string;
-  // githubToken: string; // ✅ NEW
   additionalInstructions: string;
   loading: boolean;
   loadingRepos: boolean;
   error: string;
+  since: Date | undefined;
+  until: Date | undefined;
   onUsernameChange: (value: string) => void;
-  // onTokenChange: (value: string) => void; // ✅ NEW
   onInstructionsChange: (value: string) => void;
   onRepoToggle: (repo: string) => void;
   onGenerate: () => void;
+  onSinceChange: (date: Date | undefined) => void;
+  onUntilChange: (date: Date | undefined) => void;
 }
+
 
 export default function ConfigurationPanel({
   repos,
@@ -31,11 +35,15 @@ export default function ConfigurationPanel({
   loading,
   loadingRepos,
   error,
+  since,
+  until,
   onUsernameChange,
   // onTokenChange, // ✅ NEW
   onInstructionsChange,
   onRepoToggle,
-  onGenerate
+  onGenerate,
+  onSinceChange,
+  onUntilChange
 }: ConfigurationPanelProps) {
   return (
     <Card>
@@ -75,6 +83,20 @@ export default function ConfigurationPanel({
           onToggle={onRepoToggle}
           loading={loadingRepos}
         />
+
+        <div className="grid grid-cols-2 gap-4">
+          <DatePicker
+            label="Since"
+            date={since}
+            onChange={onSinceChange}
+          />
+          <DatePicker
+            label="Until"
+            date={until}
+            onChange={onUntilChange}
+          />
+        </div>
+
 
         <div>
           <label className="block text-sm font-medium mb-2">

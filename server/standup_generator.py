@@ -1,12 +1,23 @@
 from datetime import datetime, timezone
 from gemini_client import get_ai_response
 from github_client import fetch_commits, REPO_NAME_MAPPING
+from typing import List, Optional
 
-def generate_standup(repos: list, author: str, github_token, additional_instructions: str = ""):
-    today = datetime.now(timezone.utc)
-    date_str = today.strftime("%d %b %Y")
-    start_iso = today.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-    end_iso = today.isoformat()
+def generate_standup(
+    repos: list,
+    author: str,
+    github_token: str,
+    additional_instructions: str = "",
+    since: Optional[str] = None,
+    until: Optional[str] = None
+):
+    # If dates not provided, default to today
+    now = datetime.now(timezone.utc)
+    start_iso = since or now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    end_iso = until or now.isoformat()
+    
+    # Friendly date for display
+    date_str = f"{start_iso} to {end_iso}" if since and until else now.strftime("%d %b %Y")
 
     grouped_commits = {}
 
@@ -17,7 +28,7 @@ def generate_standup(repos: list, author: str, github_token, additional_instruct
             grouped_commits[friendly_name] = commits
 
     if not grouped_commits:
-        return "No commits today."
+        return { "error" : "No commits found. Please report to azrul-qbeep or just write it yourself :P" }
 
     prompt = create_prompt(date_str, grouped_commits, additional_instructions=additional_instructions)
     return get_ai_response(prompt)

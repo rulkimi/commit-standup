@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Body
-from typing import List
+from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware  # ✅ CORS middleware
 from github_client import list_repos  # ✅ new function you'll add
 from standup_generator import generate_standup
@@ -27,7 +27,19 @@ def standup(
     repos: List[str] = Body(DEFAULT_REPOS),
     github_username: str = Body(""),
     github_token: str = Body(""),
-    additional_instructions: str = Body("")
+    additional_instructions: str = Body(""),
+    since: Optional[str] = Body(None),
+    until: Optional[str] = Body(None)
 ):
-    return {"data": generate_standup(repos, github_username, github_token, additional_instructions)}
-
+    """
+    Optional 'since' and 'until' should be ISO 8601 strings, e.g.
+    '2025-10-01T00:00:00Z'
+    """
+    return {"data": generate_standup(
+        repos,
+        github_username,
+        github_token,
+        additional_instructions,
+        since,
+        until
+    )}

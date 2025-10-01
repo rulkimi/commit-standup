@@ -29,19 +29,28 @@ export async function generateStandupAction({
   github_username,
   github_token,
   additional_instructions,
+  since,
+  until,
 }: {
   repos: string[];
   github_username: string;
   github_token: string;
   additional_instructions: string;
+  since?: string;
+  until?: string;
 }) {
   try {
     const res = await fetch(`${process.env.API_URL}/generate-standup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repos, github_username, github_token, additional_instructions }),
+      body: JSON.stringify({ repos, github_username, github_token, additional_instructions, since, until }),
     });
     const data = await res.json();
+    if (data.data.error) {
+      return {
+        "error": data.data.error
+      }
+    }
     return data.data;
   } catch {
     return null;

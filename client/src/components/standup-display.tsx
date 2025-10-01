@@ -17,9 +17,10 @@ interface StandupDisplayProps {
   loading: boolean;
   onCopy: () => void;
   copied: boolean;
+  error: string;
 }
 
-export default function StandupDisplay({ standup, loading, onCopy, copied }: StandupDisplayProps) {
+export default function StandupDisplay({ standup, loading, onCopy, copied, error }: StandupDisplayProps) {
   return (
     <Card>
       <CardHeader>
@@ -30,7 +31,7 @@ export default function StandupDisplay({ standup, loading, onCopy, copied }: Sta
               {standup ? 'Your daily standup summary' : 'Results will appear here'}
             </CardDescription>
           </div>
-          {standup && (
+          {standup && !error && (
             <Button
               onClick={onCopy}
               variant="outline"
@@ -52,21 +53,28 @@ export default function StandupDisplay({ standup, loading, onCopy, copied }: Sta
         </div>
       </CardHeader>
       <CardContent>
-        {!standup && !loading && (
+        {error && (
+          <div className="text-center py-12 text-destructive">
+            <p className="font-semibold">Error</p>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {!standup && !loading && !error && (
           <div className="text-center py-12 text-muted-foreground">
             <Github className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>Configure your settings and click &quot;Generate Standup&quot;</p>
           </div>
         )}
 
-        {loading && (
+        {loading && !error && (
           <div className="text-center py-12">
             <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin text-primary" />
             <p className="text-muted-foreground">Analyzing your commits...</p>
           </div>
         )}
 
-        {standup && (
+        {standup && !error && (
           <div className="space-y-4">
             <div className="text-sm text-muted-foreground mb-4">
               {new Date().toLocaleDateString('en-GB', {

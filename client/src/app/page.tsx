@@ -18,9 +18,15 @@ export default function StandupGenerator() {
   const [standup, setStandup] = useState<StandupData | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
+  const [analysisError, setAnalysisError] = useState('');
   const [githubToken, setGithubToken] = useState('');
   const [tokenValid, setTokenValid] = useState(false);
   const [validatingToken, setValidatingToken] = useState(false);
+
+  // New date range state
+  const [since, setSince] = useState<Date | undefined>(undefined);
+  const [until, setUntil] = useState<Date | undefined>(undefined);
+
 
   useEffect(() => {
     const savedRepos = JSON.parse(localStorage.getItem('selectedRepos') || '[]');
@@ -37,10 +43,21 @@ export default function StandupGenerator() {
     else setLoadingRepos(false);
   }, []);
 
+  // Persist state to localStorage
   useEffect(() => { localStorage.setItem('selectedRepos', JSON.stringify(selectedRepos)); }, [selectedRepos]);
   useEffect(() => { localStorage.setItem('githubUsername', username); }, [username]);
   useEffect(() => { localStorage.setItem('githubToken', githubToken); }, [githubToken]);
   useEffect(() => { localStorage.setItem('additionalInstructions', additionalInstructions); }, [additionalInstructions]);
+  useEffect(() => { localStorage.setItem('since', since?.toISOString() || '') }, [since]);
+  useEffect(() => { localStorage.setItem('until', until?.toISOString() || '') }, [until]);
+
+  useEffect(() => {
+    const savedSince = localStorage.getItem('since');
+    const savedUntil = localStorage.getItem('until');
+    if (savedSince) setSince(new Date(savedSince));
+    if (savedUntil) setUntil(new Date(savedUntil));
+  }, []);
+
 
   const validateToken = async (token: string) => {
     setValidatingToken(true);
@@ -73,7 +90,15 @@ export default function StandupGenerator() {
       github_username: username,
       github_token: githubToken,
       additional_instructions: additionalInstructions,
+      since: since?.toISOString(),
+      until: until?.toISOString(),
     });
+
+    if ("error" in result) {
+      setAnalysisError(result.error);
+      setLoading(false);
+      return;
+    }
 
     if (result) setStandup(result);
     else setError('Failed to generate standup. Please try again.');
@@ -149,16 +174,21 @@ export default function StandupGenerator() {
               loading={loading}
               loadingRepos={loadingRepos}
               error={error}
+              since={since ? new Date(since) : undefined}
+              until={until ? new Date(until) : undefined}
               onUsernameChange={setUsername}
               onInstructionsChange={setAdditionalInstructions}
               onRepoToggle={toggleRepo}
               onGenerate={generateStandup}
+              onSinceChange={setSince}
+              onUntilChange={setUntil}
             />
             <StandupDisplay
               standup={standup}
               loading={loading}
               onCopy={copyToClipboard}
               copied={copied}
+              error={analysisError}
             />
           </div>
         </div>
