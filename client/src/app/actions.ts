@@ -3,15 +3,18 @@
 
 export async function validateGithubToken(token: string) {
   try {
-    const res = await fetch('https://api.github.com/user', {
+    const res = await fetch("https://api.github.com/user", {
       headers: { Authorization: `token ${token}` },
     });
-    if (!res.ok) throw new Error('Invalid token');
-    return true;
+    if (!res.ok) throw new Error("Invalid token");
+
+    const data = await res.json();
+    return { valid: true, username: data.login };
   } catch {
-    return false;
+    return { valid: false };
   }
 }
+
 
 export async function fetchRepos(token: string) {
   try {

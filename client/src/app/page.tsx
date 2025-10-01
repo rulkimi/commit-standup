@@ -62,11 +62,16 @@ export default function StandupGenerator() {
 
   const validateToken = async (token: string) => {
     setValidatingToken(true);
-    const valid = await validateGithubToken(token);
+    const { valid, username: fetchedUsername } = await validateGithubToken(token);
     setTokenValid(valid);
-    if (!valid) setError('Invalid GitHub token');
-    else {
-      setError('');
+
+    if (!valid) {
+      setError("Invalid GitHub token");
+    } else {
+      setError("");
+
+      if (fetchedUsername) setUsername(fetchedUsername); // ✅ Auto-fill username
+
       const repoList = await fetchRepos(token);
       setRepos(repoList);
     }

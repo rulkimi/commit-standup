@@ -1,10 +1,11 @@
+"use client"
+
 import { Check, Copy, Github, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { useState } from "react";
 import { sendDiscordNotification } from "@/app/actions";
 import Image from "next/image";
-
 
 export interface Project {
   name: string;
@@ -44,23 +45,23 @@ function formatStandupAsText(standup: StandupData | null) {
 
 export default function StandupDisplay({ standup, loading, onCopy, copied, error, githubUsername }: StandupDisplayProps) {
   const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
 
   async function handlePostToDiscord() {
     if (!standup) return;
 
     setPosting(true);
+    setPostError(null);
 
     const res = await sendDiscordNotification({
       message: formatStandupAsText(standup),
-      username: githubUsername || "Standup Bot"
+      username: githubUsername || "Standup Bot",
     });
 
     setPosting(false);
 
     if (res.error) {
-      console.error("❌ Failed to post:", res.error);
-    } else {
-      console.log("✅ Posted to Discord");
+      setPostError(res.error);
     }
   }
 
@@ -150,24 +151,34 @@ export default function StandupDisplay({ standup, loading, onCopy, copied, error
 
       {/* Footer Actions */}
       {standup && !error && (
-        <div className="border-t p-4 flex justify-end">
-          <Button
-            onClick={handlePostToDiscord}
-            variant="outline"
-            size="sm"
-            disabled={posting}
-          >
-            {posting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Image
-                src="https://img.icons8.com/?size=100&id=2mIgusGquJFz&format=png&color=000000"
-                alt="Discord"
-                className="w-4 h-4 mr-2"
-              />
-            )}
-            {posting ? "Posting..." : "Post to Discord"}
-          </Button>
+        <div className="border-t p-4 flex flex-col gap-2">
+          {postError && (
+            <div className="text-destructive text-sm">
+              ❌ Failed to post to Discord: {postError}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button
+              onClick={handlePostToDiscord}
+              variant="outline"
+              size="sm"
+              disabled={posting}
+            >
+              {posting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Image
+                  src="https://img.icons8.com/?size=100&id=2mIgusGquJFz&format=png&color=000000"
+                  alt="Discord"
+                  width={24}
+                  height={24}
+                  className="w-4 h-4 mr-2"
+                />
+              )}
+              {posting ? "Posting..." : "Post to Discord"}
+            </Button>
+          </div>
         </div>
       )}
     </Card>
