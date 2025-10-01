@@ -77,16 +77,17 @@ Output Format (STRICT — NO EXTRA TEXT OUTSIDE THIS STRUCTURE):
     prompt = f"""You are an engineer writing a daily standup summary based on Git commits.
 
 Rewrite the raw commit logs below into **concise, descriptive tasks** that:
-- **Keep the original project names EXACTLY as they appear.**
-- Use **past-tense, objective statements**, without "I", "me", or "my".
-- Each task must be **a single sentence (8–15 words)**.
-- Clearly describe **what was done, where, and why if implied**.
-- Remove prefixes like "feat:", "chore:", "fix:", or leading dashes.
-- Do **not** include the project name inside each task (it's already grouped).
-- **ABSOLUTELY NO extra commentary or explanations outside the required format.**
-- **Discord has a hard limit of 2000 characters per message. If the total output would exceed this limit, AUTOMATICALLY SUMMARIZE OR GROUP TASKS instead of listing all of them individually.**
-- **The response must ALWAYS fit within Discord’s 2000-character limit.**
-- **ALWAYS respond in the exact format requested — no variations.**
+ - **Keep the original project names EXACTLY as they appear.**
+ - Use **past-tense, objective statements**, without "I", "me", or "my".
+ - **Do NOT use passive voice. Always use active voice.**
+ - Each task must be **a single sentence (8–15 words)**.
+ - Clearly describe **what was done, where, and why if implied**.
+ - Remove prefixes like "feat:", "chore:", "fix:", or leading dashes.
++ - **If multiple commits describe similar changes in the same area, COMBINE them into a single summarized task.**
+ - Do **not** include the project name inside each task (it's already grouped).
+ - **ABSOLUTELY NO extra commentary or explanations outside the required format.**
+ - **Discord has a hard limit of 2000 characters per message. If the total output would exceed this limit, AUTOMATICALLY SUMMARIZE OR GROUP TASKS instead of listing all of them individually.**
+ - **ALWAYS respond in the exact format requested — no variations.**
 
 {extra}
 
