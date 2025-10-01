@@ -49,56 +49,25 @@ export default function StandupDisplay({
   const [isEditing, setIsEditing] = useState(false);
 
   const [text, setText] = useState(""); // Full final text (used for copy/post)
-  const [date, setDate] = useState<string>(""); // ISO format YYYY-MM-DD
+  const [date, setDate] = useState<Date>(new Date()); // Date object
   const [bodyText, setBodyText] = useState(""); // Editable task content without date
   const [renderProjects, setRenderProjects] = useState<Project[] | null>(null); // Parsed from bodyText
 
-  useEffect(() => {
-    if (standup) {
-      const todayReadable = new Date().toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
-
-      setDate(formatToISO(todayReadable));
-
-      let formatted = `${todayReadable}:\n\n`;
-      standup.projects.forEach((project) => {
-        formatted += `[${project.name}]\n`;
-        project.tasks.forEach((task) => (formatted += `- ${task}\n`));
-        formatted += `\n`;
-      });
-
-      const full = formatted.trim();
-      setText(full);
-
-      const lines = full.split("\n");
-      setBodyText(lines.slice(2).join("\n"));
-
-      // Set initial renderProjects from standup
-      setRenderProjects(standup.projects);
-    }
-  }, [standup]);
-
-  function formatToISO(dateString: string) {
-    const [day, month, year] = dateString.split(" ");
-    return new Date(`${day} ${month} ${year}`).toISOString().split("T")[0];
-  }
-
-  function formatToReadable(iso: string) {
-    return new Date(iso).toLocaleDateString("en-GB", {
+  // Format Date object to readable string
+  function formatToReadable(date: Date) {
+    return date.toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
   }
 
+  // Build full text for copy/post
   function rebuildText() {
     setText(`${formatToReadable(date)}:\n\n${bodyText.trim()}`);
   }
 
-  /** Parse bodyText into structured projects/tasks */
+  // Parse bodyText into structured projects/tasks
   function parseBodyText(rawText: string): Project[] {
     const lines = rawText.split("\n");
     const projects: Project[] = [];
@@ -110,7 +79,6 @@ export default function StandupDisplay({
 
       const projectMatch = trimmed.match(/^\[(.+)\]$/);
       if (projectMatch) {
-        // Push previous project if it exists
         if (currentProject?.tasks.length) {
           projects.push(currentProject);
         }
@@ -121,7 +89,6 @@ export default function StandupDisplay({
       }
     }
 
-    // Push last project if it exists
     if (currentProject?.tasks.length) {
       projects.push(currentProject);
     }
@@ -129,6 +96,7 @@ export default function StandupDisplay({
     return projects;
   }
 
+  // Copy text to clipboard
   const copyToClipboard = () => {
     if (!text) return;
     navigator.clipboard.writeText(text);
@@ -136,6 +104,7 @@ export default function StandupDisplay({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Post to Discord with time check
   async function handlePostToDiscord() {
     if (!text) return;
 
@@ -162,6 +131,29 @@ export default function StandupDisplay({
     setPosting(false);
     if (res.error) setPostError(res.error);
   }
+
+  // Initialize text, bodyText, and projects when standup is loaded
+  useEffect(() => {
+    if (standup) {
+      const today = new Date();
+      setDate(today);
+
+      let formatted = `${formatToReadable(today)}:\n\n`;
+      standup.projects.forEach((project) => {
+        formatted += `[${project.name}]\n`;
+        project.tasks.forEach((task) => (formatted += `- ${task}\n`));
+        formatted += `\n`;
+      });
+
+      const full = formatted.trim();
+      setText(full);
+
+      const lines = full.split("\n");
+      setBodyText(lines.slice(2).join("\n"));
+
+      setRenderProjects(standup.projects);
+    }
+  }, [standup]);
 
   return (
     <Card>
@@ -246,10 +238,9 @@ export default function StandupDisplay({
               <>
                 <DatePicker
                   label="Date"
-                  date={date ? new Date(date) : undefined}
-                  onChange={(newDate) => {
-                    if (!newDate) return;
-                    setDate(newDate.toISOString().split("T")[0]);
+                  date={date}
+                  onChange={(d) => {
+                    if (d) setDate(d);
                   }}
                 />
 
