@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "QBeep Devs Standup Generator",
+  title: "Standup Generator for Qbeep Devs",
   description: "Made with love by azrul-qbeep to ease the daily standup messages for developers since we're committing to GitHub anyway. So we just need to make sure our commits are well documented."
 };
 
