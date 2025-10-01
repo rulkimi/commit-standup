@@ -56,7 +56,7 @@ export default function ConfigurationPanel({
             placeholder="octocat"
           />
         </div>
-
+{/* 
         <div>
           <label className="block text-sm font-medium mb-2">
             GitHub Token (Optional, but recommended for private repos)
@@ -67,7 +67,7 @@ export default function ConfigurationPanel({
             onChange={(e) => onTokenChange(e.target.value)}
             placeholder="ghp_xxxxxxxxxxxxxxxxxxx"
           />
-        </div>
+        </div> */}
 
         <RepositoryList
           repos={repos}

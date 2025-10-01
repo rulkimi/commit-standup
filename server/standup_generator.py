@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from gemini_client import get_ai_response
-from github_client import fetch_commits
+from github_client import fetch_commits, REPO_NAME_MAPPING
 
 def generate_standup(repos: list, author: str, github_token, additional_instructions: str = ""):
     today = datetime.now(timezone.utc)
@@ -13,7 +13,8 @@ def generate_standup(repos: list, author: str, github_token, additional_instruct
     for repo in repos:
         commits = fetch_commits(github_token, repo, start_iso, end_iso, author)
         if commits:
-            grouped_commits[repo.upper()] = commits
+            friendly_name = REPO_NAME_MAPPING.get(repo, repo)
+            grouped_commits[friendly_name] = commits
 
     if not grouped_commits:
         return "No commits today."
