@@ -17,7 +17,6 @@ export default function StandupGenerator() {
   const [loading, setLoading] = useState(false);
   const [loadingRepos, setLoadingRepos] = useState(true);
   const [standup, setStandup] = useState<StandupData | null>(null);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   const [analysisError, setAnalysisError] = useState('');
   const [githubToken, setGithubToken] = useState('');
@@ -113,23 +112,6 @@ export default function StandupGenerator() {
     setLoading(false);
   };
 
-  const copyToClipboard = () => {
-    if (!standup) return;
-
-    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-
-    let text = `${today}:\n\n`;
-    standup.projects.forEach(project => {
-      text += `[${project.name}]\n`;
-      project.tasks.forEach(task => text += `- ${task}\n`);
-      text += '\n';
-    });
-
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -194,8 +176,6 @@ export default function StandupGenerator() {
             <StandupDisplay
               standup={standup}
               loading={loading}
-              onCopy={copyToClipboard}
-              copied={copied}
               error={analysisError}
               githubUsername={username}
             />

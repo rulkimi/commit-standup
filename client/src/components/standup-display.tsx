@@ -1,9 +1,10 @@
-"use client"
+"use client";
 
-import { Check, Copy, Github, Loader2 } from "lucide-react";
+import { Check, Copy, Github, Loader2, Pencil, Save } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { useState } from "react";
+import { Textarea } from "./ui/textarea";
+import { useState, useEffect } from "react";
 import { sendDiscordNotification } from "@/app/actions";
 import {
   AlertDialog,
@@ -16,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import Image from "next/image";
+import DatePicker from "./date-picker";
 
 export interface Project {
   name: string;
@@ -29,43 +31,116 @@ export interface StandupData {
 interface StandupDisplayProps {
   standup: StandupData | null;
   loading: boolean;
-  onCopy: () => void;
-  copied: boolean;
   error: string;
   githubUsername: string;
 }
 
-function formatStandupAsText(standup: StandupData | null) {
-  if (!standup) return "";
-
-  const dateStr = new Date().toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
-
-  return `${dateStr}\n\n` + standup.projects
-    .map(
-      (project) =>
-        `**${project.name}**\n` +
-        project.tasks.map((task) => `• ${task}`).join("\n")
-    )
-    .join("\n\n");
-}
-
-export default function StandupDisplay({ standup, loading, onCopy, copied, error, githubUsername }: StandupDisplayProps) {
+export default function StandupDisplay({
+  standup,
+  loading,
+  error,
+  githubUsername,
+}: StandupDisplayProps) {
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
   const [showTimeWarning, setShowTimeWarning] = useState(false);
 
+  const [copied, setCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [text, setText] = useState(""); // Full final text (used for copy/post)
+  const [date, setDate] = useState<string>(""); // ISO format YYYY-MM-DD
+  const [bodyText, setBodyText] = useState(""); // Editable task content without date
+  const [renderProjects, setRenderProjects] = useState<Project[] | null>(null); // Parsed from bodyText
+
+  useEffect(() => {
+    if (standup) {
+      const todayReadable = new Date().toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+
+      setDate(formatToISO(todayReadable));
+
+      let formatted = `${todayReadable}:\n\n`;
+      standup.projects.forEach((project) => {
+        formatted += `[${project.name}]\n`;
+        project.tasks.forEach((task) => (formatted += `- ${task}\n`));
+        formatted += `\n`;
+      });
+
+      const full = formatted.trim();
+      setText(full);
+
+      const lines = full.split("\n");
+      setBodyText(lines.slice(2).join("\n"));
+
+      // Set initial renderProjects from standup
+      setRenderProjects(standup.projects);
+    }
+  }, [standup]);
+
+  function formatToISO(dateString: string) {
+    const [day, month, year] = dateString.split(" ");
+    return new Date(`${day} ${month} ${year}`).toISOString().split("T")[0];
+  }
+
+  function formatToReadable(iso: string) {
+    return new Date(iso).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  function rebuildText() {
+    setText(`${formatToReadable(date)}:\n\n${bodyText.trim()}`);
+  }
+
+  /** Parse bodyText into structured projects/tasks */
+  function parseBodyText(rawText: string): Project[] {
+    const lines = rawText.split("\n");
+    const projects: Project[] = [];
+    let currentProject: Project | null = null;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+
+      const projectMatch = trimmed.match(/^\[(.+)\]$/);
+      if (projectMatch) {
+        // Push previous project if it exists
+        if (currentProject?.tasks.length) {
+          projects.push(currentProject);
+        }
+        currentProject = { name: projectMatch[1], tasks: [] };
+      } else if (currentProject) {
+        const task = trimmed.replace(/^[-*]\s*/, "");
+        if (task) currentProject.tasks.push(task);
+      }
+    }
+
+    // Push last project if it exists
+    if (currentProject?.tasks.length) {
+      projects.push(currentProject);
+    }
+
+    return projects;
+  }
+
+  const copyToClipboard = () => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   async function handlePostToDiscord() {
-    if (!standup) return;
+    if (!text) return;
 
     const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-
-    const isBefore530 = hours < 17 || (hours === 17 && minutes < 30);
+    const isBefore530 = now.getHours() < 17 || (now.getHours() === 17 && now.getMinutes() < 30);
 
     if (isBefore530) {
       setShowTimeWarning(true);
@@ -80,15 +155,12 @@ export default function StandupDisplay({ standup, loading, onCopy, copied, error
     setPostError(null);
 
     const res = await sendDiscordNotification({
-      message: formatStandupAsText(standup!),
+      message: text,
       username: githubUsername || "Standup Bot",
     });
 
     setPosting(false);
-
-    if (res.error) {
-      setPostError(res.error);
-    }
+    if (res.error) setPostError(res.error);
   }
 
   return (
@@ -103,25 +175,50 @@ export default function StandupDisplay({ standup, loading, onCopy, copied, error
           </div>
 
           {standup && !error && (
-            <Button onClick={onCopy} variant="outline" size="sm">
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 mr-2" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={copyToClipboard} variant="outline" size="sm">
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy
+                  </>
+                )}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (isEditing) {
+                    rebuildText();
+                    setRenderProjects(parseBodyText(bodyText));
+                  }
+                  setIsEditing((prev) => !prev);
+                }}
+              >
+                {isEditing ? (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit
+                  </>
+                )}
+              </Button>
+            </div>
           )}
         </div>
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Error State */}
         {error && (
           <div className="text-center py-12 text-destructive">
             <p className="font-semibold">Error</p>
@@ -129,7 +226,6 @@ export default function StandupDisplay({ standup, loading, onCopy, copied, error
           </div>
         )}
 
-        {/* Empty State */}
         {!standup && !loading && !error && (
           <div className="text-center py-12 text-muted-foreground">
             <Github className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -137,7 +233,6 @@ export default function StandupDisplay({ standup, loading, onCopy, copied, error
           </div>
         )}
 
-        {/* Loading State */}
         {loading && !error && (
           <div className="text-center py-12">
             <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin text-primary" />
@@ -145,52 +240,54 @@ export default function StandupDisplay({ standup, loading, onCopy, copied, error
           </div>
         )}
 
-        {/* Standup */}
         {standup && !error && (
           <>
-            <div className="text-sm text-muted-foreground">
-              {new Date().toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
-            </div>
+            {isEditing ? (
+              <>
+                <DatePicker
+                  label="Date"
+                  date={date ? new Date(date) : undefined}
+                  onChange={(newDate) => {
+                    if (!newDate) return;
+                    setDate(newDate.toISOString().split("T")[0]);
+                  }}
+                />
 
-            {standup.projects.map((project, idx) => (
-              <div key={idx} className="border-l-4 border-primary pl-4 py-2">
-                <h3 className="font-semibold text-primary mb-2 font-mono">
-                  [{project.name}]
-                </h3>
-                <ul className="space-y-1">
-                  {project.tasks.map((task, taskIdx) => (
-                    <li key={taskIdx} className="text-sm flex items-start">
-                      <span className="mr-2 text-muted-foreground">-</span>
-                      <span>{task}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+                <Textarea
+                  value={bodyText}
+                  onChange={(e) => setBodyText(e.target.value)}
+                  className="min-h-[200px] font-mono text-sm"
+                />
+              </>
+            ) : (
+              <>
+                <div className="text-sm text-muted-foreground">{formatToReadable(date)}</div>
+
+                {(renderProjects ?? standup.projects).map((project, idx) => (
+                  <div key={idx} className="border-l-4 border-primary pl-4 py-2">
+                    <h3 className="font-semibold text-primary mb-2 font-mono">[{project.name}]</h3>
+                    <ul className="space-y-1">
+                      {project.tasks.map((task, taskIdx) => (
+                        <li key={taskIdx} className="text-sm flex items-start">
+                          <span className="mr-2 text-muted-foreground">-</span>
+                          <span>{task}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </>
+            )}
           </>
         )}
       </CardContent>
 
-      {/* Footer Actions */}
       {standup && !error && (
         <div className="border-t p-4 flex flex-col gap-2">
-          {postError && (
-            <div className="text-destructive text-sm">
-              ❌ Failed to post to Discord: {postError}
-            </div>
-          )}
+          {postError && <div className="text-destructive text-sm">❌ {postError}</div>}
 
           <div className="flex justify-end">
-            <Button
-              onClick={handlePostToDiscord}
-              variant="outline"
-              size="sm"
-              disabled={posting}
-            >
+            <Button onClick={handlePostToDiscord} variant="outline" size="sm" disabled={posting}>
               {posting ? (
                 <Loader2 className="w-4 h-4 mr-1 animate-spin" />
               ) : (
@@ -234,7 +331,6 @@ export default function StandupDisplay({ standup, loading, onCopy, copied, error
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </Card>
   );
 }
