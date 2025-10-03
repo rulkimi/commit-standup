@@ -88,6 +88,7 @@ export default function StandupGenerator() {
 
     setLoading(true);
     setError('');
+    setAnalysisError('');
     setStandup(null);
 
     const bothToday = isSameDay(since, new Date()) && isSameDay(until, new Date());
@@ -140,7 +141,7 @@ export default function StandupGenerator() {
                 value={githubToken}
                 onChange={e => setGithubToken(e.target.value)}
               />
-              {error && <div className="text-destructive text-sm">{error}</div>}
+              {!standup && error && <div className="text-destructive text-sm">{error}</div>}
               <button
                 disabled={validatingToken || !githubToken.trim()}
                 onClick={() => validateToken(githubToken)}
