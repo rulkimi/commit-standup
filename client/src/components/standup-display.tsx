@@ -4,6 +4,8 @@ import { Check, Copy, Github, Loader2, Pencil, Save } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Textarea } from "./ui/textarea";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 import { useState, useEffect } from "react";
 import { sendDiscordNotification } from "@/app/actions";
 import {
@@ -48,12 +50,45 @@ export default function StandupDisplay({
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [text, setText] = useState(""); // Full final text (used for copy/post)
-  const [date, setDate] = useState<Date>(new Date()); // Date object
-  const [bodyText, setBodyText] = useState(""); // Editable task content without date
-  const [renderProjects, setRenderProjects] = useState<Project[] | null>(null); // Parsed from bodyText
+  const [text, setText] = useState(""); 
+  const [date, setDate] = useState<Date>(new Date());
+  const [bodyText, setBodyText] = useState("");
+  const [renderProjects, setRenderProjects] = useState<Project[] | null>(null);
 
-  // Format Date object to readable string
+  const [avatarUrl, setAvatarUrl] = useState(""); 
+  const [avatarValid, setAvatarValid] = useState<boolean | null>(null);
+
+  // Load avatar from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("standup_avatar");
+      if (stored) setAvatarUrl(stored);
+    }
+  }, []);
+
+  // Save avatar to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (avatarUrl) {
+        localStorage.setItem("standup_avatar", avatarUrl);
+      } else {
+        localStorage.removeItem("standup_avatar");
+      }
+    }
+  }, [avatarUrl]);
+
+  useEffect(() => {
+    if (!avatarUrl) {
+      setAvatarValid(null);
+      return;
+    }
+    const img = new window.Image(); // ✅ explicitly use browser Image
+    img.src = avatarUrl;
+    img.onload = () => setAvatarValid(true);
+    img.onerror = () => setAvatarValid(false);
+  }, [avatarUrl]);
+
+
   function formatToReadable(date: Date) {
     return date.toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -62,12 +97,10 @@ export default function StandupDisplay({
     });
   }
 
-  // Build full text for copy/post
   function rebuildText() {
     setText(`${formatToReadable(date)}:\n\n${bodyText.trim()}`);
   }
 
-  // Parse bodyText into structured projects/tasks
   function parseBodyText(rawText: string): Project[] {
     const lines = rawText.split("\n");
     const projects: Project[] = [];
@@ -96,7 +129,6 @@ export default function StandupDisplay({
     return projects;
   }
 
-  // Copy text to clipboard
   const copyToClipboard = () => {
     if (!text) return;
     navigator.clipboard.writeText(text);
@@ -104,7 +136,6 @@ export default function StandupDisplay({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Post to Discord with time check
   async function handlePostToDiscord() {
     if (!text) return;
 
@@ -126,13 +157,13 @@ export default function StandupDisplay({
     const res = await sendDiscordNotification({
       message: text,
       username: githubUsername || "Standup Bot",
+      avatar_url: avatarUrl && avatarValid ? avatarUrl : "",
     });
 
     setPosting(false);
     if (res.error) setPostError(res.error);
   }
 
-  // Initialize text, bodyText, and projects when standup is loaded
   useEffect(() => {
     if (standup) {
       const today = new Date();
@@ -141,7 +172,9 @@ export default function StandupDisplay({
       let formatted = `${formatToReadable(today)}:\n\n`;
       standup.projects.forEach((project) => {
         formatted += `[${project.name}]\n`;
-        project.tasks.forEach((task) => (formatted += `- ${task}\n`));
+        project.tasks.forEach((task) => {
+          formatted += `- ${task}\n`;
+        });
         formatted += `\n`;
       });
 
@@ -274,8 +307,45 @@ export default function StandupDisplay({
       </CardContent>
 
       {standup && !error && (
-        <div className="border-t p-4 flex flex-col gap-2">
+        <div className="border-t p-4 flex flex-col gap-3">
           {postError && <div className="text-destructive text-sm">❌ {postError}</div>}
+
+          {/* Avatar input section */}
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="avatarUrl">Discord Avatar (optional)</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="avatarUrl"
+                placeholder="https://example.com/avatar.png"
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+                className="flex-1"
+              />
+              {avatarUrl && avatarValid && (
+                <Image
+                  src={avatarUrl}
+                  alt="Avatar preview"
+                  width={32}
+                  height={32}
+                  className="rounded-full border object-cover"
+                />
+              )}
+            </div>
+            {avatarUrl && avatarValid === false && (
+              <p className="text-xs text-destructive">❌ Could not load image. Please check the URL.</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Leave blank to use the default bot avatar. You can find free icons at{" "}
+              <a
+                href="https://icons8.com/icons"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Icons8
+              </a>.
+            </p>
+          </div>
 
           <div className="flex justify-end">
             <Button onClick={handlePostToDiscord} variant="outline" size="sm" disabled={posting}>
