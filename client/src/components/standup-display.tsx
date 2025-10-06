@@ -340,7 +340,7 @@ export default function StandupDisplay({
           {/* Avatar input section */}
           <div className="flex flex-col gap-1">
             <Label htmlFor="avatarUrl">Discord Avatar (optional)</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mt-1">
               <Input
                 id="avatarUrl"
                 placeholder="https://example.com/avatar.png"
