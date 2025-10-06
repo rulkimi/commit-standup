@@ -45,17 +45,19 @@ export default function StandupDisplay({
 }: StandupDisplayProps) {
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
+  const [copiedSuccess, setCopiedSuccess] = useState(false);
+
   const [showTimeWarning, setShowTimeWarning] = useState(false);
 
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [text, setText] = useState(""); 
+  const [text, setText] = useState("");
   const [date, setDate] = useState<Date>(new Date());
   const [bodyText, setBodyText] = useState("");
   const [renderProjects, setRenderProjects] = useState<Project[] | null>(null);
 
-  const [avatarUrl, setAvatarUrl] = useState(""); 
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarValid, setAvatarValid] = useState<boolean | null>(null);
 
   // Load avatar from localStorage
@@ -82,12 +84,11 @@ export default function StandupDisplay({
       setAvatarValid(null);
       return;
     }
-    const img = new window.Image(); // ✅ explicitly use browser Image
+    const img = new window.Image();
     img.src = avatarUrl;
     img.onload = () => setAvatarValid(true);
     img.onerror = () => setAvatarValid(false);
   }, [avatarUrl]);
-
 
   function formatToReadable(date: Date) {
     return date.toLocaleDateString("en-GB", {
@@ -153,6 +154,7 @@ export default function StandupDisplay({
   async function actuallyPost() {
     setPosting(true);
     setPostError(null);
+    setCopiedSuccess(false);
 
     const res = await sendDiscordNotification({
       message: text,
@@ -161,8 +163,23 @@ export default function StandupDisplay({
     });
 
     setPosting(false);
-    if (res.error) setPostError(res.error);
+
+    if (res.error) {
+      setPostError(res.error);
+    } else {
+      // ✅ Auto copy standup
+      navigator.clipboard.writeText(text);
+      setCopiedSuccess(true);
+
+      // Hide the copied banner after 2-3 seconds
+      setTimeout(() => {
+        setCopiedSuccess(false);
+        // ✅ Redirect to HR portal in new tab
+        window.open("https://hrp.ewbg.eu/task-tracker/create", "_blank");
+      }, 3000);
+    }
   }
+
 
   useEffect(() => {
     if (standup) {
@@ -309,6 +326,16 @@ export default function StandupDisplay({
       {standup && !error && (
         <div className="border-t p-4 flex flex-col gap-3">
           {postError && <div className="text-destructive text-sm">❌ {postError}</div>}
+
+          {copiedSuccess && (
+            <div className="flex items-start gap-2 rounded-md border border-green-300 bg-green-50 p-3 text-green-700 text-sm animate-fade-in">
+              <Check className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium">✅ Standup posted to Discord and copied to clipboard!</p>
+                <p className="animate-pulse">Redirecting to your HR portal...</p>
+              </div>
+            </div>
+          )}
 
           {/* Avatar input section */}
           <div className="flex flex-col gap-1">
