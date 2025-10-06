@@ -91,26 +91,91 @@ export default function StandupGenerator() {
     setAnalysisError('');
     setStandup(null);
 
-    const bothToday = isSameDay(since, new Date()) && isSameDay(until, new Date());
+    const startOfDay = (d: Date) => {
+      const r = new Date(d);
+      r.setHours(0, 0, 0, 0);
+      return r;
+    };
+    const endOfDay = (d: Date) => {
+      const r = new Date(d);
+      r.setHours(23, 59, 59, 999);
+      return r;
+    };
+    const isSameLocalDay = (a?: Date, b?: Date) => {
+      if (!a || !b) return false;
+      return (
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate()
+      );
+    };
 
-    const result = await generateStandupAction({
-      repos: selectedRepos,
-      github_username: username,
-      github_token: githubToken,
-      additional_instructions: additionalInstructions,
-      since: !bothToday ? since?.toISOString() : undefined,
-      until: !bothToday ? until?.toISOString() : undefined,
-    });
+    try {
+      // parse incoming date state (they may already be Date objects)
+      let sinceDate = since ? new Date(since) : undefined;
+      let untilDate = until ? new Date(until) : undefined;
+      const today = new Date();
 
-    if ("error" in result) {
-      setAnalysisError(result.error);
+      // defensive: invalid dates
+      if (sinceDate && Number.isNaN(sinceDate.getTime())) {
+        setError('Invalid "since" date');
+        setLoading(false);
+        return;
+      }
+      if (untilDate && Number.isNaN(untilDate.getTime())) {
+        setError('Invalid "until" date');
+        setLoading(false);
+        return;
+      }
+
+      // Normalize to whole-days (but keep "now" for today)
+      if (sinceDate) sinceDate = startOfDay(sinceDate);
+
+      if (untilDate) {
+        if (isSameLocalDay(untilDate, today)) {
+          // If 'until' is today → use now (avoid future timestamps)
+          untilDate = new Date();
+        } else {
+          // Otherwise include the whole day
+          untilDate = endOfDay(untilDate);
+        }
+      }
+
+      // If both present, ensure since <= until
+      if (sinceDate && untilDate && sinceDate > untilDate) {
+        setError('"Since" must be before or equal to "Until"');
+        setLoading(false);
+        return;
+      }
+
+      const payload = {
+        repos: selectedRepos,
+        github_username: username,
+        github_token: githubToken,
+        additional_instructions: additionalInstructions,
+        since: sinceDate?.toISOString(),
+        until: untilDate?.toISOString(),
+      };
+
+      // DEBUG: inspect what's actually sent (open console / network to verify)
+      console.log('generateStandup payload', payload);
+
+      const result = await generateStandupAction(payload);
+
+      if ('error' in result) {
+        setAnalysisError(result.error);
+        setLoading(false);
+        return;
+      }
+
+      if (result) setStandup(result);
+      else setError('Failed to generate standup. Please try again.');
+    } catch (err) {
+      console.error('generateStandup error', err);
+      setError('Unexpected error. Check console/network for details.');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    if (result) setStandup(result);
-    else setError('Failed to generate standup. Please try again.');
-    setLoading(false);
   };
 
   return (
