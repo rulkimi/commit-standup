@@ -160,7 +160,7 @@ export default function StandupDisplay({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Generated Standup</CardTitle>
+            <CardTitle className="text-primary">Generated Standup</CardTitle>
             <CardDescription>
               {standup ? "Your daily standup summary" : "Results will appear here"}
             </CardDescription>
@@ -287,7 +287,7 @@ export default function StandupDisplay({
                   alt="Discord"
                   width={24}
                   height={24}
-                  className="w-4 h-4 mr-2"
+                  className="w-4 h-4 mr-1"
                 />
               )}
               {posting ? "Posting..." : "Post to Discord"}

@@ -83,7 +83,7 @@ export default function ConfigurationPanel({
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Configuration</CardTitle>
+          <CardTitle className="text-primary">Configuration</CardTitle>
           <CardDescription>
             Select repositories and configure your standup
           </CardDescription>
