@@ -30,7 +30,8 @@ REPO_NAME_MAPPING = {
     "smfd-new-cms": "SMFD New CMS",
     "qbeep-dev-bot": "Qbeep Dev Bot",
     "smfd-cms-3.0": "SMFD CMS",
-    "QBot": "QBot"
+    "QBot": "QBot",
+    "resqmeals-cms": "ResQmeals CMS (Revamp)"
 }
 
 def get_headers(token: str):
